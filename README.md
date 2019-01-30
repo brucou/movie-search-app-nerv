@@ -1,7 +1,6 @@
 # Motivation
 This repository showcases the use of state machines to modelize user interfaces. The chosen 
 technologies are :
- is :
  - [hyperscript](https://github.com/brucou/nerv-hyperscript) for describing the screens of the interface in a portable way
  - [nervjs](https://github.com/NervJS/nerv) for rendering
  - [state-transducer](https://github.com/brucou/state-transducer) as state machine library
