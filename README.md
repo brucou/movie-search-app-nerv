@@ -17,3 +17,8 @@ The application is built with parcel. To run it :
 `npm install`
 
 `npm run start`
+
+# State machine
+The state machine modelizing the search application is as follows :
+
+![](movie%20search%20good%20fsm%20corrected%20flowchart%20no%20emphasis%20switchMap.png)
