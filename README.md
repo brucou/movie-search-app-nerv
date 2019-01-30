@@ -9,7 +9,8 @@ technologies are :
 Portability was important as the underlying idea is to port this application into many different
 front-end frameworks. So far, implementation exists for :
   - [inferno](https://github.com/brucou/movie-search-app-inferno)
-
+  - [react](https://codesandbox.io/s/kwn3lx2qx7)
+  
 # Installation and execution
 The application is built with parcel. To run it :
 
