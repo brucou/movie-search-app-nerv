@@ -10,7 +10,8 @@ Portability was important as the underlying idea is to port this application int
 front-end frameworks. So far, implementation exists for :
   - [inferno](https://github.com/brucou/movie-search-app-inferno)
   - [react](https://codesandbox.io/s/kwn3lx2qx7)
-  
+  - [ivi](https://github.com/brucou/movie-search-app-ivi)
+
 # Installation and execution
 The application is built with parcel. To run it :
 
