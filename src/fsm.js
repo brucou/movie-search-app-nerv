@@ -1,39 +1,24 @@
 import { NO_OUTPUT, NO_STATE_UPDATE } from "state-transducer";
 import {
+  DISCOVERY_REQUEST,
+  // commands
   COMMAND_MOVIE_DETAILS_SEARCH,
   COMMAND_MOVIE_SEARCH,
   COMMAND_RENDER,
-  DISCOVERY_REQUEST,
-  events,
-  IMAGE_TMDB_PREFIX,
-  LOADING,
+  // states
+  START,
   MOVIE_DETAIL_QUERYING,
   MOVIE_DETAIL_SELECTION,
   MOVIE_DETAIL_SELECTION_ERROR,
   MOVIE_QUERYING,
   MOVIE_SELECTION,
   MOVIE_SELECTION_ERROR,
-  NETWORK_ERROR,
-  NO_INTENT,
-  POPULAR_NOW,
-  PROMPT,
-  screens as screenIds,
-  SEARCH_RESULTS_FOR,
-  START,
-  testIds
+  // events
+  events,
+  // screens
+  screens as screenIds
 } from "./properties";
-import {
-  destructureEvent,
-  makeQuerySlug,
-  runMovieDetailQuery,
-  runMovieSearchQuery
-} from "./helpers";
-import h from "nerv-hyperscript";
-import hyperscript from "hyperscript-helpers";
-
-const { div, a, ul, li, input, h1, h3, legend, img, dl, dt, dd } = hyperscript(
-  h
-);
+import { makeQuerySlug, runMovieDetailQuery, runMovieSearchQuery } from "./helpers";
 
 const NO_ACTIONS = () => ({ outputs: NO_OUTPUT, updates: NO_STATE_UPDATE });
 
@@ -57,13 +42,11 @@ const states = {
 };
 const {
   SEARCH_ERROR_MOVIE_RECEIVED,
-  QUERY_RESETTED,
   USER_NAVIGATED_TO_APP,
   QUERY_CHANGED,
   MOVIE_DETAILS_DESELECTED,
   MOVIE_SELECTED,
   SEARCH_ERROR_RECEIVED,
-  SEARCH_REQUESTED,
   SEARCH_RESULTS_MOVIE_RECEIVED,
   SEARCH_RESULTS_RECEIVED
 } = events;
@@ -165,648 +148,6 @@ const transitions = [
     action: displayCurrentMovieSearchResultsScreen
   }
 ];
-const eventHandlersFactory = next => ({
-  [QUERY_CHANGED]: ev => next({ [QUERY_CHANGED]: ev.target.value }),
-  [QUERY_RESETTED]: ev => next({ [QUERY_CHANGED]: "" }),
-  [MOVIE_SELECTED]: (ev, result) =>
-    next({ [MOVIE_SELECTED]: { movie: result } }),
-  [MOVIE_DETAILS_DESELECTED]: ev => next({ [MOVIE_DETAILS_DESELECTED]: void 0 })
-});
-
-const preprocessor = rawEventSource =>
-  rawEventSource.pipe(
-    map(ev => {
-      const { rawEventName, rawEventData: e, ref } = destructureEvent(ev);
-
-      if (rawEventName === USER_NAVIGATED_TO_APP) {
-        return { [USER_NAVIGATED_TO_APP]: void 0 };
-      } else if (rawEventName === SEARCH_RESULTS_RECEIVED) {
-        const resultsAndQuery = e;
-        return { SEARCH_RESULTS_RECEIVED: resultsAndQuery };
-      } else if (rawEventName === SEARCH_ERROR_RECEIVED) {
-        const query = e;
-        return { SEARCH_ERROR_RECEIVED: query };
-      } else if (rawEventName === QUERY_RESETTED) {
-        return { QUERY_CHANGED: "" };
-      } else if (rawEventName === QUERY_CHANGED) {
-        // NOTE : react trick : avoiding issues with synthetic event reuse by caching the value
-        const query = e.target.value;
-        return { QUERY_CHANGED: query };
-      } else if (rawEventName === MOVIE_SELECTED) {
-        const movie = ref;
-        return { MOVIE_SELECTED: { movie } };
-      } else if (rawEventName === SEARCH_RESULTS_MOVIE_RECEIVED) {
-        const [movieDetails, cast] = e;
-
-        return { SEARCH_RESULTS_MOVIE_RECEIVED: [movieDetails, cast] };
-      } else if (rawEventName === SEARCH_ERROR_MOVIE_RECEIVED) {
-        return { SEARCH_ERROR_MOVIE_RECEIVED: void 0 };
-      } else if (rawEventName === MOVIE_DETAILS_DESELECTED) {
-        return { MOVIE_DETAILS_DESELECTED: void 0 };
-      }
-
-      return NO_INTENT;
-    }),
-    filter(x => x !== NO_INTENT),
-    startWith({ [USER_NAVIGATED_TO_APP]: void 0 })
-  );
-
-const {
-  PROMPT_TESTID,
-  RESULTS_HEADER_TESTID,
-  RESULTS_CONTAINER_TESTID,
-  QUERY_FIELD_TESTID,
-  LOADING_TESTID,
-  MOVIE_IMG_SRC_TESTID,
-  MOVIE_TITLE_TESTID,
-  NETWORK_ERROR_TESTID
-} = testIds;
-export const screens = next => {
-  const eventHandlers = eventHandlersFactory(next);
-
-  return {
-    [LOADING_SCREEN]: () =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "home" },
-        [
-          div(".App__view-container", [
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "home" },
-              [
-                div(".HomePage", [
-                  h1([`TMDb UI – Home`]),
-                  legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                    PROMPT
-                  ]),
-                  div(".SearchBar.uk-inline.uk-margin-bottom", [
-                    a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                      "uk-icon": "icon:search"
-                    }),
-                    input(".SearchBar__input.uk-input.js-input", {
-                      type: "text",
-                      value: "",
-                      onInput: eventHandlers[QUERY_CHANGED],
-                      "data-testid": QUERY_FIELD_TESTID
-                    })
-                  ]),
-                  h3(
-                    ".uk-heading-bullet.uk-margin-remove-top",
-                    { "data-testid": RESULTS_HEADER_TESTID },
-                    [POPULAR_NOW]
-                  ),
-                  div(
-                    ".ResultsContainer",
-                    { "data-testid": RESULTS_CONTAINER_TESTID },
-                    [div([LOADING])]
-                  )
-                ])
-              ]
-            )
-          ])
-        ]
-      ),
-    [SEARCH_RESULTS_SCREEN]: (results, query) =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "home" },
-        [
-          div(".App__view-container", [
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "home" },
-              [
-                div(".HomePage", [
-                  h1([`TMDb UI – Home`]),
-                  legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                    PROMPT
-                  ]),
-                  div(".SearchBar.uk-inline.uk-margin-bottom", [
-                    a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                      "uk-icon":
-                        query.length > 0 ? "icon:close" : "icon:search",
-                      onClick: eventHandlers[QUERY_RESETTED]
-                    }),
-                    input(".SearchBar__input.uk-input.js-input", {
-                      type: "text",
-                      value: query,
-                      onInput: eventHandlers[QUERY_CHANGED],
-                      "data-testid": QUERY_FIELD_TESTID
-                    })
-                  ]),
-                  h3(
-                    ".uk-heading-bullet.uk-margin-remove-top",
-                    { "data-testid": RESULTS_HEADER_TESTID },
-                    [
-                      query.length === 0
-                        ? POPULAR_NOW
-                        : SEARCH_RESULTS_FOR(query)
-                    ]
-                  ),
-                  div(
-                    ".ResultsContainer",
-                    { "data-testid": RESULTS_CONTAINER_TESTID },
-                    [
-                      ul(".uk-thumbnav", [
-                        results &&
-                          results
-                            .filter(result => result.backdrop_path)
-                            .map(result =>
-                              li(".uk-margin-bottom", { key: result.id }, [
-                                a(
-                                  ".ResultsContainer__result-item.js-result-click",
-                                  {
-                                    href: "#",
-                                    onClick: ev =>
-                                      eventHandlers[MOVIE_SELECTED](ev, result),
-                                    "data-id": result.id
-                                  },
-                                  [
-                                    div(".ResultsContainer__thumbnail-holder", [
-                                      img({
-                                        src: `${IMAGE_TMDB_PREFIX}${
-                                          result.backdrop_path
-                                        }`,
-                                        alt: "",
-                                        "data-testid": MOVIE_IMG_SRC_TESTID
-                                      })
-                                    ]),
-                                    div(
-                                      ".ResultsContainer__caption.uk-text-small.uk-text-muted",
-                                      { "data-testid": MOVIE_TITLE_TESTID },
-                                      [result.title]
-                                    )
-                                  ]
-                                )
-                              ])
-                            )
-                      ])
-                    ]
-                  )
-                ])
-              ]
-            )
-          ])
-        ]
-      ),
-    [SEARCH_ERROR_SCREEN]: query =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "home" },
-        [
-          div(".App__view-container", [
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "home" },
-              [
-                div(".HomePage", [
-                  h1([`TMDb UI – Home`]),
-                  legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                    PROMPT
-                  ]),
-                  div(".SearchBar.uk-inline.uk-margin-bottom", [
-                    a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                      "uk-icon":
-                        query.length > 0 ? "icon:close" : "icon:search",
-                      onClick: eventHandlers[QUERY_RESETTED]
-                    }),
-                    input(".SearchBar__input.uk-input.js-input", {
-                      type: "text",
-                      value: query,
-                      onInput: eventHandlers[QUERY_CHANGED],
-                      "data-testid": QUERY_FIELD_TESTID
-                    })
-                  ]),
-                  h3(
-                    ".uk-heading-bullet.uk-margin-remove-top",
-                    { "data-testid": RESULTS_HEADER_TESTID },
-                    [POPULAR_NOW]
-                  ),
-                  div(
-                    ".ResultsContainer",
-                    { "data-testid": RESULTS_CONTAINER_TESTID },
-                    [
-                      div({ "data-testid": NETWORK_ERROR_TESTID }, [
-                        NETWORK_ERROR
-                      ])
-                    ]
-                  )
-                ])
-              ]
-            )
-          ])
-        ]
-      ),
-    [SEARCH_RESULTS_AND_LOADING_SCREEN]: (results, query) =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "home" },
-        [
-          div(".App__view-container", [
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "home" },
-              [
-                div(".HomePage", [
-                  h1([`TMDb UI – Home`]),
-                  legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                    PROMPT
-                  ]),
-                  div(".SearchBar.uk-inline.uk-margin-bottom", [
-                    a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                      "uk-icon":
-                        query.length > 0 ? "icon:close" : "icon:search",
-                      onClick: eventHandlers[QUERY_RESETTED]
-                    }),
-                    input(".SearchBar__input.uk-input.js-input", {
-                      type: "text",
-                      value: query,
-                      onInput: eventHandlers[QUERY_CHANGED],
-                      "data-testid": QUERY_FIELD_TESTID
-                    })
-                  ]),
-                  h3(
-                    ".uk-heading-bullet.uk-margin-remove-top",
-                    { "data-testid": RESULTS_HEADER_TESTID },
-                    [
-                      query.length === 0
-                        ? POPULAR_NOW
-                        : SEARCH_RESULTS_FOR(query)
-                    ]
-                  ),
-                  div(
-                    ".ResultsContainer",
-                    { "data-testid": RESULTS_CONTAINER_TESTID },
-                    [div([LOADING])]
-                  )
-                ])
-              ]
-            )
-          ])
-        ]
-      ),
-    [SEARCH_RESULTS_WITH_MOVIE_DETAILS_AND_LOADING_SCREEN]: (
-      results,
-      query,
-      movieDetail
-    ) =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "item" },
-        [
-          div(".App__view-container", [
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "home" },
-              [
-                div(".HomePage", [
-                  h1([`TMDb UI – Home`]),
-                  legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                    PROMPT
-                  ]),
-                  div(".SearchBar.uk-inline.uk-margin-bottom", [
-                    a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                      "uk-icon":
-                        query.length > 0 ? "icon:close" : "icon:search",
-                      onClick: eventHandlers[QUERY_RESETTED]
-                    }),
-                    input(".SearchBar__input.uk-input.js-input", {
-                      type: "text",
-                      value: query,
-                      onInput: eventHandlers[QUERY_CHANGED],
-                      "data-testid": QUERY_FIELD_TESTID
-                    })
-                  ]),
-                  h3(
-                    ".uk-heading-bullet.uk-margin-remove-top",
-                    { "data-testid": RESULTS_HEADER_TESTID },
-                    [
-                      query.length === 0
-                        ? POPULAR_NOW
-                        : SEARCH_RESULTS_FOR(query)
-                    ]
-                  ),
-                  div(
-                    ".ResultsContainer",
-                    { "data-testid": RESULTS_CONTAINER_TESTID },
-                    [
-                      ul(".uk-thumbnav", [
-                        results &&
-                          results
-                            .filter(result => result.backdrop_path)
-                            .map(result =>
-                              li(
-                                ".uk-margin-bottom",
-                                {
-                                  key: result.id,
-                                  onClick: ev =>
-                                    eventHandlers[MOVIE_SELECTED](ev, result)
-                                },
-                                [
-                                  a(
-                                    ".ResultsContainer__result-item.js-result-click",
-                                    {
-                                      href: null,
-                                      "data-id": result.id
-                                    },
-                                    [
-                                      div(
-                                        ".ResultsContainer__thumbnail-holder",
-                                        [
-                                          img({
-                                            src: `${IMAGE_TMDB_PREFIX}${
-                                              result.backdrop_path
-                                            }`,
-                                            alt: "",
-                                            "data-testid": MOVIE_IMG_SRC_TESTID
-                                          })
-                                        ]
-                                      ),
-                                      div(
-                                        ".ResultsContainer__caption.uk-text-small.uk-text-muted",
-                                        { "data-testid": MOVIE_TITLE_TESTID },
-                                        [result.title]
-                                      )
-                                    ]
-                                  )
-                                ]
-                              )
-                            )
-                      ])
-                    ]
-                  )
-                ])
-              ]
-            ),
-            div(
-              ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-              { "data-page": "item" },
-              [div([h1([movieDetail.title]), div([LOADING])])]
-            )
-          ])
-        ]
-      ),
-    [SEARCH_RESULTS_WITH_MOVIE_DETAILS]: (results, query, details, cast) =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "item" },
-        [
-          div(
-            ".App__view-container",
-            { onClick: eventHandlers[MOVIE_DETAILS_DESELECTED] },
-            [
-              div(
-                ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-                { "data-page": "home" },
-                [
-                  div(".HomePage", [
-                    h1([`TMDb UI – Home`]),
-                    legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                      PROMPT
-                    ]),
-                    div(".SearchBar.uk-inline.uk-margin-bottom", [
-                      a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                        "uk-icon":
-                          query.length > 0 ? "icon:close" : "icon:search",
-                        onClick: eventHandlers[QUERY_RESETTED]
-                      }),
-                      input(".SearchBar__input.uk-input.js-input", {
-                        type: "text",
-                        value: query,
-                        onInput: eventHandlers[QUERY_CHANGED],
-                        "data-testid": QUERY_FIELD_TESTID
-                      })
-                    ]),
-                    h3(
-                      ".uk-heading-bullet.uk-margin-remove-top",
-                      { "data-testid": RESULTS_HEADER_TESTID },
-                      [
-                        query.length === 0
-                          ? POPULAR_NOW
-                          : SEARCH_RESULTS_FOR(query)
-                      ]
-                    ),
-                    div(
-                      ".ResultsContainer",
-                      { "data-testid": RESULTS_CONTAINER_TESTID },
-                      [
-                        ul(".uk-thumbnav", [
-                          results &&
-                            results
-                              .filter(result => result.backdrop_path)
-                              .map(result =>
-                                li(".uk-margin-bottom", { key: result.id }, [
-                                  a(
-                                    ".ResultsContainer__result-item.js-result-click",
-                                    {
-                                      href: "#",
-                                      onClick: ev =>
-                                        eventHandlers[MOVIE_SELECTED](
-                                          ev,
-                                          result
-                                        ),
-                                      "data-id": result.id
-                                    },
-                                    [
-                                      div(
-                                        ".ResultsContainer__thumbnail-holder",
-                                        [
-                                          img({
-                                            src: `${IMAGE_TMDB_PREFIX}${
-                                              result.backdrop_path
-                                            }`,
-                                            alt: "",
-                                            "data-testid": MOVIE_IMG_SRC_TESTID
-                                          })
-                                        ]
-                                      ),
-                                      div(
-                                        ".ResultsContainer__caption.uk-text-small.uk-text-muted",
-                                        { "data-testid": MOVIE_TITLE_TESTID },
-                                        [result.title]
-                                      )
-                                    ]
-                                  )
-                                ])
-                              )
-                        ])
-                      ]
-                    )
-                  ])
-                ]
-              ),
-              div(
-                ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-                { "data-page": "item" },
-                [
-                  div([
-                    h1([details.title || ""]),
-                    div(".MovieDetailsPage", [
-                      div(
-                        ".MovieDetailsPage__img-container.uk-margin-right",
-                        {
-                          style: { float: "left" }
-                        },
-                        [
-                          img({
-                            src: `http://image.tmdb.org/t/p/w342${
-                              details.poster_path
-                            }`,
-                            alt: ""
-                          })
-                        ]
-                      ),
-                      dl(".uk-description-list", [
-                        dt([`Popularity`]),
-                        dd([details.vote_average]),
-                        dt([`Overview`]),
-                        dd([details.overview]),
-                        dt([`Genres`]),
-                        dd([details.genres.map(g => g.name).join(", ")]),
-                        dt([`Starring`]),
-                        dd([
-                          cast.cast
-                            .slice(0, 3)
-                            .map(cast => cast.name)
-                            .join(", ")
-                        ]),
-                        dt([`Languages`]),
-                        dd([
-                          details.spoken_languages.map(g => g.name).join(", ")
-                        ]),
-                        dt([`Original Title`]),
-                        dd([details.original_title]),
-                        dt([`Release Date`]),
-                        dd([details.release_date]),
-                        details.imdb_id && dt([`IMDb URL`]),
-                        details.imdb_id &&
-                          dd([
-                            a(
-                              {
-                                href: `https://www.imdb.com/title/${
-                                  details.imdb_id
-                                }/`
-                              },
-                              [`https://www.imdb.com/title/${details.imdb_id}/`]
-                            )
-                          ])
-                      ])
-                    ])
-                  ])
-                ]
-              )
-            ]
-          )
-        ]
-      ),
-    [SEARCH_RESULTS_WITH_MOVIE_DETAILS_ERROR]: (results, query, title) =>
-      div(
-        ".App.uk-light.uk-background-secondary",
-        { "data-active-page": "item" },
-        [
-          div(
-            ".App__view-container",
-            { onClick: eventHandlers[MOVIE_DETAILS_DESELECTED] },
-            [
-              div(
-                ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-                { "data-page": "home" },
-                [
-                  div(".HomePage", [
-                    h1([`TMDb UI – Home`]),
-                    legend(".uk-legend", { "data-testid": PROMPT_TESTID }, [
-                      PROMPT
-                    ]),
-                    div(".SearchBar.uk-inline.uk-margin-bottom", [
-                      a(".uk-form-icon.uk-form-icon-flip.js-clear", {
-                        "uk-icon":
-                          query.length > 0 ? "icon:close" : "icon:search",
-                        onClick: eventHandlers[QUERY_RESETTED]
-                      }),
-                      input(".SearchBar__input.uk-input.js-input", {
-                        type: "text",
-                        value: query,
-                        onInput: eventHandlers[QUERY_CHANGED],
-                        "data-testid": QUERY_FIELD_TESTID
-                      })
-                    ]),
-                    h3(
-                      ".uk-heading-bullet.uk-margin-remove-top",
-                      { "data-testid": RESULTS_HEADER_TESTID },
-                      [
-                        query.length === 0
-                          ? POPULAR_NOW
-                          : SEARCH_RESULTS_FOR(query)
-                      ]
-                    ),
-                    div(
-                      ".ResultsContainer",
-                      { "data-testid": RESULTS_CONTAINER_TESTID },
-                      [
-                        ul(".uk-thumbnav", [
-                          results &&
-                            results
-                              .filter(result => result.backdrop_path)
-                              .map(result =>
-                                li(".uk-margin-bottom", { key: result.id }, [
-                                  a(
-                                    ".ResultsContainer__result-item.js-result-click",
-                                    {
-                                      href: "#",
-                                      onClick: ev =>
-                                        eventHandlers[MOVIE_SELECTED](
-                                          ev,
-                                          result
-                                        ),
-                                      "data-id": result.id
-                                    },
-                                    [
-                                      div(
-                                        ".ResultsContainer__thumbnail-holder",
-                                        [
-                                          img({
-                                            src: `${IMAGE_TMDB_PREFIX}${
-                                              result.backdrop_path
-                                            }`,
-                                            alt: "",
-                                            "data-testid": MOVIE_IMG_SRC_TESTID
-                                          })
-                                        ]
-                                      ),
-                                      div(
-                                        ".ResultsContainer__caption.uk-text-small.uk-text-muted",
-                                        { "data-testid": MOVIE_TITLE_TESTID },
-                                        [result.title]
-                                      )
-                                    ]
-                                  )
-                                ])
-                              )
-                        ])
-                      ]
-                    )
-                  ])
-                ]
-              ),
-              div(
-                ".App__view.uk-margin-top-small.uk-margin-left.uk-margin-right",
-                { "data-page": "item" },
-                [
-                  div([
-                    h1([title]),
-                    div({ "data-testid": NETWORK_ERROR_TESTID }, [
-                      NETWORK_ERROR
-                    ])
-                  ])
-                ]
-              )
-            ]
-          )
-        ]
-      )
-  };
-};
 
 export const commandHandlers = {
   [COMMAND_MOVIE_SEARCH]: (next, _query, effectHandlers) => {
@@ -829,9 +170,7 @@ export const commandHandlers = {
   [COMMAND_MOVIE_DETAILS_SEARCH]: (next, movieId, effectHandlers) => {
     effectHandlers
       .runMovieDetailQuery(movieId)
-      .then(([details, cast]) =>
-        next({ [SEARCH_RESULTS_MOVIE_RECEIVED]: [details, cast] })
-      )
+      .then(([details, cast]) => next({ [SEARCH_RESULTS_MOVIE_RECEIVED]: [details, cast] }))
       .catch(err => next({ [SEARCH_ERROR_MOVIE_RECEIVED]: err }));
   }
 };
@@ -840,12 +179,6 @@ export const effectHandlers = {
   runMovieSearchQuery: runMovieSearchQuery,
   runMovieDetailQuery: runMovieDetailQuery
 };
-
-function AppScreen(props) {
-  const { screen, trigger, args } = props;
-
-  return screens(trigger)[screen](...args);
-}
 
 function displayLoadingScreenAndQueryDb(extendedState, eventData, fsmSettings) {
   const searchCommand = {
@@ -862,17 +195,8 @@ function displayLoadingScreenAndQueryDb(extendedState, eventData, fsmSettings) {
   };
 }
 
-function displayLoadingScreenAndQueryNonEmpty(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
-  const {
-    queryFieldHasChanged,
-    movieQuery,
-    results,
-    movieTitle
-  } = extendedState;
+function displayLoadingScreenAndQueryNonEmpty(extendedState, eventData, fsmSettings) {
+  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
   const query = eventData;
   const searchCommand = {
     command: COMMAND_MOVIE_SEARCH,
@@ -894,11 +218,7 @@ function displayLoadingScreenAndQueryNonEmpty(
   };
 }
 
-function displayMovieSearchResultsScreen(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
+function displayMovieSearchResultsScreen(extendedState, eventData, fsmSettings) {
   const searchResults = eventData;
   const { results, query } = searchResults;
   const renderCommand = {
@@ -915,11 +235,7 @@ function displayMovieSearchResultsScreen(
   };
 }
 
-function displayCurrentMovieSearchResultsScreen(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
+function displayCurrentMovieSearchResultsScreen(extendedState, eventData, fsmSettings) {
   const { movieQuery, results } = extendedState;
   const renderCommand = {
     command: COMMAND_RENDER,
@@ -936,12 +252,7 @@ function displayCurrentMovieSearchResultsScreen(
 }
 
 function displayMovieSearchErrorScreen(extendedState, eventData, fsmSettings) {
-  const {
-    queryFieldHasChanged,
-    movieQuery,
-    results,
-    movieTitle
-  } = extendedState;
+  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
@@ -956,11 +267,7 @@ function displayMovieSearchErrorScreen(extendedState, eventData, fsmSettings) {
   };
 }
 
-function displayDetailsLoadingScreenAndQueryDetailsDb(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
+function displayDetailsLoadingScreenAndQueryDetailsDb(extendedState, eventData, fsmSettings) {
   const { movie } = eventData;
   const movieId = movie.id;
   const { movieQuery, results } = extendedState;
@@ -983,18 +290,9 @@ function displayDetailsLoadingScreenAndQueryDetailsDb(
   };
 }
 
-function displayMovieDetailsSearchResultsScreen(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
+function displayMovieDetailsSearchResultsScreen(extendedState, eventData, fsmSettings) {
   const [movieDetails, cast] = eventData;
-  const {
-    queryFieldHasChanged,
-    movieQuery,
-    results,
-    movieTitle
-  } = extendedState;
+  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
 
   const renderCommand = {
     command: COMMAND_RENDER,
@@ -1013,17 +311,8 @@ function displayMovieDetailsSearchResultsScreen(
   };
 }
 
-function displayMovieDetailsSearchErrorScreen(
-  extendedState,
-  eventData,
-  fsmSettings
-) {
-  const {
-    queryFieldHasChanged,
-    movieQuery,
-    results,
-    movieTitle
-  } = extendedState;
+function displayMovieDetailsSearchErrorScreen(extendedState, eventData, fsmSettings) {
+  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
 
   const renderCommand = {
     command: COMMAND_RENDER,

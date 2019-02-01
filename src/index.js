@@ -4,18 +4,10 @@ import { render } from "nervjs";
 import h from "nerv-hyperscript";
 import { createStateMachine } from "state-transducer";
 import emitonoff from "emitonoff";
-import {
-  movieSearchFsmDef,
-  commandHandlers,
-  effectHandlers,
-  screens
-} from "./fsm";
+import { movieSearchFsmDef, commandHandlers, effectHandlers } from "./fsm";
+import { screens } from "./screens";
 import { applyJSONpatch, makeWebComponentFromFsm } from "./helpers";
 import { COMMAND_RENDER, events } from "./properties";
-
-if (process.env.NODE_ENV !== 'production')  {
-  require('nerv-devtools')
-}
 
 const fsm = createStateMachine(movieSearchFsmDef, {
   updateState: applyJSONpatch,
@@ -35,17 +27,13 @@ function subjectFromEventEmitterFactory() {
   };
 }
 
-const infernoRenderCommandHandler = {
+const nervRenderCommandHandler = {
   [COMMAND_RENDER]: (trigger, params, effectHandlers, el) => {
     const { screen, args } = params;
     render(screens(trigger)[screen](...args), el);
   }
 };
-const commandHandlersWithRender = Object.assign(
-  {},
-  commandHandlers,
-  infernoRenderCommandHandler
-);
+const commandHandlersWithRender = Object.assign({}, commandHandlers, nervRenderCommandHandler);
 
 const options = { initialEvent: { [events.USER_NAVIGATED_TO_APP]: void 0 } };
 
