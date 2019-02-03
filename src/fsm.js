@@ -1,24 +1,24 @@
 import { NO_OUTPUT, NO_STATE_UPDATE } from "state-transducer";
 import {
-  DISCOVERY_REQUEST,
-  // commands
   COMMAND_MOVIE_DETAILS_SEARCH,
   COMMAND_MOVIE_SEARCH,
   COMMAND_RENDER,
-  // states
-  START,
+  DISCOVERY_REQUEST,
+  events,
   MOVIE_DETAIL_QUERYING,
   MOVIE_DETAIL_SELECTION,
   MOVIE_DETAIL_SELECTION_ERROR,
   MOVIE_QUERYING,
   MOVIE_SELECTION,
   MOVIE_SELECTION_ERROR,
-  // events
-  events,
-  // screens
-  screens as screenIds
+  screens as screenIds,
+  START
 } from "./properties";
-import { makeQuerySlug, runMovieDetailQuery, runMovieSearchQuery } from "./helpers";
+import {
+  makeQuerySlug,
+  runMovieDetailQuery,
+  runMovieSearchQuery
+} from "./helpers";
 
 const NO_ACTIONS = () => ({ outputs: NO_OUTPUT, updates: NO_STATE_UPDATE });
 
@@ -170,7 +170,9 @@ export const commandHandlers = {
   [COMMAND_MOVIE_DETAILS_SEARCH]: (next, movieId, effectHandlers) => {
     effectHandlers
       .runMovieDetailQuery(movieId)
-      .then(([details, cast]) => next({ [SEARCH_RESULTS_MOVIE_RECEIVED]: [details, cast] }))
+      .then(([details, cast]) =>
+        next({ [SEARCH_RESULTS_MOVIE_RECEIVED]: [details, cast] })
+      )
       .catch(err => next({ [SEARCH_ERROR_MOVIE_RECEIVED]: err }));
   }
 };
@@ -187,7 +189,7 @@ function displayLoadingScreenAndQueryDb(extendedState, eventData, fsmSettings) {
   };
   const renderCommand = {
     command: COMMAND_RENDER,
-    params: { screen: LOADING_SCREEN, args: [] }
+    params: { screen: LOADING_SCREEN }
   };
   return {
     updates: NO_STATE_UPDATE,
@@ -195,8 +197,17 @@ function displayLoadingScreenAndQueryDb(extendedState, eventData, fsmSettings) {
   };
 }
 
-function displayLoadingScreenAndQueryNonEmpty(extendedState, eventData, fsmSettings) {
-  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
+function displayLoadingScreenAndQueryNonEmpty(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
+  const {
+    queryFieldHasChanged,
+    movieQuery,
+    results,
+    movieTitle
+  } = extendedState;
   const query = eventData;
   const searchCommand = {
     command: COMMAND_MOVIE_SEARCH,
@@ -206,7 +217,8 @@ function displayLoadingScreenAndQueryNonEmpty(extendedState, eventData, fsmSetti
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_AND_LOADING_SCREEN,
-      args: [results, query]
+      results,
+      query
     }
   };
   return {
@@ -218,14 +230,19 @@ function displayLoadingScreenAndQueryNonEmpty(extendedState, eventData, fsmSetti
   };
 }
 
-function displayMovieSearchResultsScreen(extendedState, eventData, fsmSettings) {
+function displayMovieSearchResultsScreen(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
   const searchResults = eventData;
   const { results, query } = searchResults;
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_SCREEN,
-      args: [results, query || ""]
+      results,
+      query: query || ""
     }
   };
 
@@ -235,13 +252,18 @@ function displayMovieSearchResultsScreen(extendedState, eventData, fsmSettings) 
   };
 }
 
-function displayCurrentMovieSearchResultsScreen(extendedState, eventData, fsmSettings) {
+function displayCurrentMovieSearchResultsScreen(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
   const { movieQuery, results } = extendedState;
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_SCREEN,
-      args: [results, movieQuery || ""]
+      results,
+      query: movieQuery || ""
     }
   };
 
@@ -252,12 +274,17 @@ function displayCurrentMovieSearchResultsScreen(extendedState, eventData, fsmSet
 }
 
 function displayMovieSearchErrorScreen(extendedState, eventData, fsmSettings) {
-  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
+  const {
+    queryFieldHasChanged,
+    movieQuery,
+    results,
+    movieTitle
+  } = extendedState;
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_ERROR_SCREEN,
-      args: [queryFieldHasChanged ? movieQuery : ""]
+      query: queryFieldHasChanged ? movieQuery : ""
     }
   };
 
@@ -267,7 +294,11 @@ function displayMovieSearchErrorScreen(extendedState, eventData, fsmSettings) {
   };
 }
 
-function displayDetailsLoadingScreenAndQueryDetailsDb(extendedState, eventData, fsmSettings) {
+function displayDetailsLoadingScreenAndQueryDetailsDb(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
   const { movie } = eventData;
   const movieId = movie.id;
   const { movieQuery, results } = extendedState;
@@ -280,7 +311,9 @@ function displayDetailsLoadingScreenAndQueryDetailsDb(extendedState, eventData, 
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_WITH_MOVIE_DETAILS_AND_LOADING_SCREEN,
-      args: [results, movieQuery, movie]
+      results,
+      query: movieQuery,
+      title: movie.title
     }
   };
 
@@ -290,15 +323,28 @@ function displayDetailsLoadingScreenAndQueryDetailsDb(extendedState, eventData, 
   };
 }
 
-function displayMovieDetailsSearchResultsScreen(extendedState, eventData, fsmSettings) {
+function displayMovieDetailsSearchResultsScreen(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
   const [movieDetails, cast] = eventData;
-  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
+  const {
+    queryFieldHasChanged,
+    movieQuery,
+    results,
+    movieTitle
+  } = extendedState;
 
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_WITH_MOVIE_DETAILS,
-      args: [results, movieQuery, movieDetails, cast]
+      results,
+      query: movieQuery,
+      title: movieTitle,
+      details: movieDetails,
+      cast
     }
   };
 
@@ -311,14 +357,25 @@ function displayMovieDetailsSearchResultsScreen(extendedState, eventData, fsmSet
   };
 }
 
-function displayMovieDetailsSearchErrorScreen(extendedState, eventData, fsmSettings) {
-  const { queryFieldHasChanged, movieQuery, results, movieTitle } = extendedState;
+function displayMovieDetailsSearchErrorScreen(
+  extendedState,
+  eventData,
+  fsmSettings
+) {
+  const {
+    queryFieldHasChanged,
+    movieQuery,
+    results,
+    movieTitle
+  } = extendedState;
 
   const renderCommand = {
     command: COMMAND_RENDER,
     params: {
       screen: SEARCH_RESULTS_WITH_MOVIE_DETAILS_ERROR,
-      args: [results, movieQuery, movieTitle]
+      results,
+      query: movieQuery,
+      title: movieTitle
     }
   };
 
