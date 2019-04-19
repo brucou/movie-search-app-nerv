@@ -19,6 +19,22 @@ import {
   runMovieDetailQuery,
   runMovieSearchQuery
 } from "./helpers";
+import { applyPatch } from "json-patch-es6";
+
+/**
+ *
+ * @param {ExtendedState} extendedState
+ * @param {Operation[]} extendedStateUpdateOperations
+ * @returns {ExtendedState}
+ */
+export function applyJSONpatch(extendedState, extendedStateUpdateOperations) {
+  return applyPatch(
+    extendedState,
+    extendedStateUpdateOperations || [],
+    false,
+    false
+  ).newDocument;
+}
 
 const NO_ACTIONS = () => ({ outputs: NO_OUTPUT, updates: NO_STATE_UPDATE });
 
@@ -59,8 +75,9 @@ const {
   SEARCH_RESULTS_WITH_MOVIE_DETAILS_AND_LOADING_SCREEN,
   SEARCH_RESULTS_WITH_MOVIE_DETAILS_ERROR
 } = screenIds;
+
+// { from: INIT_STATE, event: INIT_EVENT, to: START, action: NO_ACTIONS },
 const transitions = [
-  // { from: INIT_STATE, event: INIT_EVENT, to: START, action: NO_ACTIONS },
   {
     from: START,
     event: USER_NAVIGATED_TO_APP,
@@ -148,7 +165,6 @@ const transitions = [
     action: displayCurrentMovieSearchResultsScreen
   }
 ];
-
 export const commandHandlers = {
   [COMMAND_MOVIE_SEARCH]: (next, _query, effectHandlers) => {
     const querySlug = _query === "" ? DISCOVERY_REQUEST : makeQuerySlug(_query);
@@ -385,16 +401,6 @@ function displayMovieDetailsSearchErrorScreen(
   };
 }
 
-const movieSearchFsmDef = {
-  initialControlState,
-  initialExtendedState,
-  states,
-  events: Object.values(events),
-  transitions
-};
-
-export { movieSearchFsmDef };
-
 // Guards
 function isExpectedMovieResults(extendedState, eventData, settings) {
   const { query: fetched } = eventData;
@@ -405,3 +411,14 @@ function isExpectedMovieResults(extendedState, eventData, settings) {
 function isNotExpectedMovieResults(extendedState, eventData, settings) {
   return !isExpectedMovieResults(extendedState, eventData, settings);
 }
+
+const movieSearchFsmDef = {
+  initialControlState,
+  initialExtendedState,
+  states,
+  events: Object.values(events),
+  transitions,
+  updateState: applyJSONpatch
+};
+
+export { movieSearchFsmDef };

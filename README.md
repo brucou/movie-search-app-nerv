@@ -9,9 +9,11 @@ technologies are :
 Portability was important as the underlying idea is to port this application into many different
 front-end frameworks. So far, implementation exists for :
   - [inferno](https://github.com/brucou/movie-search-app-inferno)
-  - [react](https://codesandbox.io/s/kwn3lx2qx7)
+  - [react](https://codesandbox.io/s/ym8vpqm7m9)
   - [ivi](https://github.com/brucou/movie-search-app-ivi)
   - [svelte](https://github.com/brucou/movie-search-app-svelte)
+  - [dojo](https://codesandbox.io/s/jnvylz9jkw)
+  - [vue](https://github.com/brucou/movie-search-vue)
 
 # Installation and execution
 The application is built with parcel. To run it :

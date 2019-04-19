@@ -49,63 +49,19 @@ export function applyJSONpatch(extendedState, extendedStateUpdateOperations) {
   ).newDocument;
 }
 
-// outputSubject allows raising event which can be
-export function makeWebComponentFromFsm({
-  name,
-  eventSubjectFactory,
-  fsm,
-  commandHandlers,
-  effectHandlers,
-  options
-}) {
-  class FsmComponent extends HTMLElement {
-    static get observedAttributes() {
-      return [];
-    }
+export const getEventEmitterAdapter = emitonoff => {
+  const eventEmitter = emitonoff();
+  const DUMMY_NAME_SPACE = "_";
+  const subscribers = [];
 
-    constructor() {
-      super();
-      const el = this;
-      this.eventSubject = eventSubjectFactory();
-      this.outputSubject = eventSubjectFactory();
-      this.options = Object.assign({}, options);
-      const NO_ACTION = this.options.NO_ACTION || null;
-
-      // Set up execution of commands
-      this.eventSubject.subscribe(eventStruct => {
-        const actions = fsm(eventStruct);
-
-        if (actions === NO_ACTION) return;
-        actions.forEach(action => {
-          if (action === NO_ACTION) return;
-          const { command, params } = action;
-          commandHandlers[command](
-            this.eventSubject.next,
-            params,
-            effectHandlers,
-            el,
-            this.outputSubject
-          );
-        });
-      });
-    }
-
-    connectedCallback() {
-      this.options.initialEvent &&
-        this.eventSubject.next(this.options.initialEvent);
-    }
-
-    disconnectedCallback() {
-      this.eventSubject.complete();
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-      // simulate a new creation every time an attribute is changed
-      // i.e. they are not expected to change
-      this.constructor();
-      this.connectedCallback();
-    }
-  }
-
-  return customElements.define(name, FsmComponent);
-}
+  return {
+    subjectFactory: () => ({
+      next: x => eventEmitter.emit(DUMMY_NAME_SPACE, x),
+      complete: () =>
+        subscribers.forEach(f => eventEmitter.off(DUMMY_NAME_SPACE, f)),
+      subscribe: ({ next: f, error: _, complete: __ }) => {
+        return subscribers.push(f), eventEmitter.on(DUMMY_NAME_SPACE, f);
+      }
+    })
+  };
+};
